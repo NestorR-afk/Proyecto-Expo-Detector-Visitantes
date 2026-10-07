@@ -12,7 +12,9 @@ La primera arquitectura ejecutable mantiene el prototipo YOLO existente dentro d
 cámara → tracking YOLO → presentación OpenCV
 ```
 
-Todavía no se implementaron el contador de visitantes, la línea de cruce, ROI, SQLite, recuperación automática ni métricas avanzadas.
+Todavía no se implementaron el contador de visitantes, la integración del cruce al tracking, ROI, SQLite, recuperación automática ni métricas avanzadas.
+
+La geometría pura de `CrossingLine` permite evaluar si un movimiento entre dos centroides cruza un segmento finito. Esta capacidad todavía no está integrada al loop ni genera visitantes acumulados.
 
 ## Requisitos
 
@@ -79,6 +81,7 @@ src/
 ├── main.py
 ├── config/
 ├── domain/
+│   └── counting/
 ├── application/
 ├── infrastructure/
 │   ├── camera/
