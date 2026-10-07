@@ -49,7 +49,9 @@ class OpenCVWindow:
         )
 
         cv2.imshow(self._title, frame)
-        return cv2.waitKey(1) & 0xFF == ord("q")
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            return True
+        return cv2.getWindowProperty(self._title, cv2.WND_PROP_VISIBLE) < 1
 
     def close(self) -> None:
         cv2.destroyAllWindows()

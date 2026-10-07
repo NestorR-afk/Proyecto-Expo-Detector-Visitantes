@@ -67,6 +67,10 @@ class TrajectoryEventDetector:
 
         return tuple(events)
 
+    def reset(self) -> None:
+        """Discard active trajectory state after a camera/tracker reset."""
+        self._states.clear()
+
     def _new_state(
         self,
         person: TrackedPerson,

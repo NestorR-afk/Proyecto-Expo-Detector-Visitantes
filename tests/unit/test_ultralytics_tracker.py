@@ -130,6 +130,13 @@ class TrackerAdapterTests(unittest.TestCase):
         self.assertTrue(call_kwargs["persist"])
         self.assertEqual(call_kwargs["classes"], [0])
 
+    def test_reset_recreates_model_session(self) -> None:
+        tracker = self.build_tracker()
+
+        tracker.reset()
+
+        self.assertEqual(len(FakeYOLO.instances), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

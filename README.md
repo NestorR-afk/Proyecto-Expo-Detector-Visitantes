@@ -14,6 +14,8 @@ La primera arquitectura ejecutable mantiene el prototipo YOLO existente dentro d
 
 El flujo de aplicación integra la generación de `VisitEvent` y persiste esos eventos en SQLite. El total visible se recupera desde la cantidad de eventos almacenados al reiniciar.
 
+La cámara tolera fallos temporales de lectura y puede reabrirse con límites configurables. Una recuperación significativa reinicia únicamente el estado efímero de tracking; los eventos y el total persistidos en SQLite no se modifican.
+
 La geometría pura de `CrossingLine` evalúa si un movimiento entre dos centroides cruza un segmento finito. La línea provisional se configura en `Settings` y debe calibrarse para la instalación física.
 
 `TrajectoryEventDetector` mantiene estado técnico mínimo por `TrackingID` y emite como máximo un `VisitEvent` mientras ese track permanece activo. Si el estado expira, una trayectoria posterior puede iniciar un nuevo ciclo. `TrackingID != VisitEvent`: el primero es temporal y el segundo representa un evento de paso.
@@ -76,6 +78,9 @@ La configuración operativa se encuentra en `src/config/settings.py`, dentro de 
 | `counting_line_start_x/y` | `0.0 / 300.0` | Inicio provisional del segmento de conteo |
 | `counting_line_end_x/y` | `1280.0 / 300.0` | Fin provisional del segmento de conteo |
 | `database_path` | `data/session.sqlite3` | Base SQLite local de eventos |
+| `camera_max_consecutive_read_failures` | `3` | Fallos consecutivos antes de reabrir |
+| `camera_reopen_attempts` | `3` | Intentos máximos por reapertura |
+| `camera_reopen_delay_seconds` | `1.0` | Espera entre reintentos de cámara |
 
 No se usan rutas absolutas del equipo ni archivos YAML, dotenv o paquetes de configuración externos.
 
@@ -104,6 +109,8 @@ Un `TrackingID` no representa la identidad real de una persona y no debe interpr
 SQLite guarda únicamente `tracking_id`, dirección geométrica y timestamp UTC ISO 8601 en `data/session.sqlite3`. No se almacenan imágenes, frames, video ni datos de identidad personal.
 
 El sistema no realiza reconocimiento facial. No almacena por defecto caras, fotografías, frames ni video. Los datos futuros deberán limitarse a estadísticas anónimas y eventos técnicos mínimos.
+
+Para una Expo se recomienda mantener la PC conectada a corriente, desactivar la suspensión, fijar la webcam y evitar desconectar el USB durante la jornada.
 
 ## Prototipos históricos
 

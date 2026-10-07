@@ -1,6 +1,7 @@
 """Application orchestration for tracking and visit-event generation."""
 
 from collections.abc import Callable
+import logging
 from time import monotonic
 
 from src.application.ports import (
@@ -11,6 +12,9 @@ from src.application.ports import (
     VisitEventRepository,
 )
 from src.domain.counting import CrossingLine, TrajectoryEventDetector
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TrackingLoop:
@@ -49,6 +53,11 @@ class TrackingLoop:
                 if not frame_ok:
                     break
 
+                if self._camera_was_reopened():
+                    self._event_detector.reset()
+                    self._tracker.reset()
+                    LOGGER.info("Reset ephemeral tracking state after camera recovery")
+
                 people = tuple(self._tracker.track(frame))
                 events = self._event_detector.update(people, now=self._clock())
                 if events:
@@ -63,6 +72,13 @@ class TrackingLoop:
                 if self._presenter.show(frame, state):
                     break
         finally:
-            self._frame_source.release()
-            self._presenter.close()
-            self._event_repository.close()
+            try:
+                self._frame_source.release()
+            finally:
+                try:
+                    self._presenter.close()
+                finally:
+                    self._event_repository.close()
+
+    def _camera_was_reopened(self) -> bool:
+        return self._frame_source.consume_recovery()

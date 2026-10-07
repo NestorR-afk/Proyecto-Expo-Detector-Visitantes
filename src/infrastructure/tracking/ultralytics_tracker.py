@@ -21,12 +21,20 @@ class UltralyticsTracker:
         person_class_id: int,
         tracker: str,
     ) -> None:
-        self._model = YOLO(str(model_path))
+        self._model_path = model_path
+        self._model = self._create_model()
         self._imgsz = imgsz
         self._confidence = confidence
         self._iou = iou
         self._person_class_id = person_class_id
         self._tracker = tracker
+
+    def reset(self) -> None:
+        """Create a fresh Ultralytics session after camera recovery."""
+        self._model = self._create_model()
+
+    def _create_model(self) -> YOLO:
+        return YOLO(str(self._model_path))
 
     def track(self, frame: Any) -> Sequence[TrackedPerson]:
         results = self._model.track(

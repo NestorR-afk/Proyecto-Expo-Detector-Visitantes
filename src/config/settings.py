@@ -15,6 +15,9 @@ class Settings:
     model_path: Path = PROJECT_ROOT / "models" / "yolo11n.pt"
     camera_width: int | None = None
     camera_height: int | None = None
+    camera_max_consecutive_read_failures: int = 3
+    camera_reopen_attempts: int = 3
+    camera_reopen_delay_seconds: float = 1.0
     imgsz: int = 320
     confidence: float = 0.25
     iou: float = 0.7

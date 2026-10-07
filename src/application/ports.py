@@ -27,12 +27,18 @@ class FrameSource(Protocol):
     def release(self) -> None:
         """Release the underlying capture resource."""
 
+    def consume_recovery(self) -> bool:
+        """Return whether the source reopened since the last successful read."""
+
 
 class PersonTracker(Protocol):
     """Produces temporary tracks from one frame."""
 
     def track(self, frame: Any) -> Sequence[TrackedPerson]:
         """Track people in the supplied frame."""
+
+    def reset(self) -> None:
+        """Discard tracker state after a significant camera recovery."""
 
 
 class VisitEventRepository(Protocol):

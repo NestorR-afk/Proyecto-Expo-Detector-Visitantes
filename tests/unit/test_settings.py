@@ -19,6 +19,9 @@ class SettingsTests(unittest.TestCase):
             settings.database_path,
             PROJECT_ROOT / "data" / "session.sqlite3",
         )
+        self.assertEqual(settings.camera_max_consecutive_read_failures, 3)
+        self.assertEqual(settings.camera_reopen_attempts, 3)
+        self.assertEqual(settings.camera_reopen_delay_seconds, 1.0)
         self.assertEqual(
             (
                 settings.counting_line_start_x,

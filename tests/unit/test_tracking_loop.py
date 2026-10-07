@@ -19,26 +19,49 @@ def person(tracking_id: int, y: float) -> TrackedPerson:
 
 
 class FakeFrameSource:
-    def __init__(self, count: int) -> None:
+    def __init__(self, count: int, recovery_frames: set[int] | None = None) -> None:
         self.frames = [(True, f"frame-{index}") for index in range(count)]
         self.frames.append((False, None))
+        self.recovery_frames = recovery_frames or set()
+        self.read_count = 0
         self.released = False
 
     def read(self) -> tuple[bool, object]:
+        self.read_count += 1
         return self.frames.pop(0)
 
     def release(self) -> None:
         self.released = True
 
+    def consume_recovery(self) -> bool:
+        return self.read_count - 1 in self.recovery_frames
+
 
 class FakeTracker:
+    last_instance = None
+
     def __init__(self, tracks_by_frame: list[list[TrackedPerson]]) -> None:
+        FakeTracker.last_instance = self
         self._tracks_by_frame = tracks_by_frame
         self.received: list[object] = []
+        self.reset_count = 0
 
     def track(self, frame: object) -> list[TrackedPerson]:
         self.received.append(frame)
         return self._tracks_by_frame[len(self.received) - 1]
+
+    def reset(self) -> None:
+        self.reset_count += 1
+
+
+class InterruptingFrameSource(FakeFrameSource):
+    def read(self) -> tuple[bool, object]:
+        raise KeyboardInterrupt
+
+
+class FailingTracker(FakeTracker):
+    def track(self, frame: object) -> list[TrackedPerson]:
+        raise RuntimeError("inference failed")
 
 
 class RecordingPresenter:
@@ -74,8 +97,9 @@ def run_loop(
     tracks_by_frame: list[list[TrackedPerson]],
     clock_values: list[float] | None = None,
     repository: FakeRepository | None = None,
+    recovery_frames: set[int] | None = None,
 ) -> tuple[TrackingLoop, RecordingPresenter, FakeFrameSource, FakeRepository]:
-    source = FakeFrameSource(len(tracks_by_frame))
+    source = FakeFrameSource(len(tracks_by_frame), recovery_frames)
     tracker = FakeTracker(tracks_by_frame)
     presenter = RecordingPresenter()
     repository = repository or FakeRepository()
@@ -158,6 +182,63 @@ class TrackingLoopTests(unittest.TestCase):
 
         self.assertEqual(loop.total_visits, 347)
         self.assertEqual(presenter.states[0].total_visits, 347)
+
+    def test_camera_recovery_resets_ephemeral_state_but_keeps_total(self) -> None:
+        loop, presenter, source, repository = run_loop(
+            [[person(1, 250)], [person(1, 350)]],
+            repository=FakeRepository(12),
+            recovery_frames={1},
+        )
+
+        self.assertEqual(loop.total_visits, 12)
+        self.assertEqual(sum(len(state.events) for state in presenter.states), 0)
+        self.assertEqual(repository.saved, [])
+        self.assertTrue(source.released)
+        self.assertEqual(FakeTracker.last_instance.reset_count, 1)
+
+    def test_keyboard_interrupt_still_closes_resources(self) -> None:
+        source = InterruptingFrameSource(0)
+        tracker = FakeTracker([])
+        presenter = RecordingPresenter()
+        repository = FakeRepository()
+        loop = TrackingLoop(
+            source,
+            tracker,
+            TrajectoryEventDetector(LINE),
+            LINE,
+            presenter,
+            repository,
+            0,
+        )
+
+        with self.assertRaises(KeyboardInterrupt):
+            loop.run()
+
+        self.assertTrue(source.released)
+        self.assertTrue(presenter.closed)
+        self.assertTrue(repository.closed)
+
+    def test_processing_exception_still_closes_resources(self) -> None:
+        source = FakeFrameSource(1)
+        tracker = FailingTracker([[]])
+        presenter = RecordingPresenter()
+        repository = FakeRepository()
+        loop = TrackingLoop(
+            source,
+            tracker,
+            TrajectoryEventDetector(LINE),
+            LINE,
+            presenter,
+            repository,
+            0,
+        )
+
+        with self.assertRaises(RuntimeError):
+            loop.run()
+
+        self.assertTrue(source.released)
+        self.assertTrue(presenter.closed)
+        self.assertTrue(repository.closed)
 
     def test_noop_presenter_keeps_preview_disabled_path_working(self) -> None:
         state = PresentationState((), (), 0, LINE)
