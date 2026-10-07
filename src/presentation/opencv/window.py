@@ -1,10 +1,14 @@
 """OpenCV window used by the current tracking prototype."""
 
+import logging
 from typing import Any
 
 import cv2
 
 from src.application.ports import PresentationState
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class OpenCVWindow:
@@ -51,7 +55,11 @@ class OpenCVWindow:
         cv2.imshow(self._title, frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             return True
-        return cv2.getWindowProperty(self._title, cv2.WND_PROP_VISIBLE) < 1
+        try:
+            return cv2.getWindowProperty(self._title, cv2.WND_PROP_VISIBLE) < 1
+        except cv2.error:
+            LOGGER.info("OpenCV window is no longer available; shutting down")
+            return True
 
     def close(self) -> None:
         cv2.destroyAllWindows()
