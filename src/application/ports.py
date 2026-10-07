@@ -35,6 +35,19 @@ class PersonTracker(Protocol):
         """Track people in the supplied frame."""
 
 
+class VisitEventRepository(Protocol):
+    """Persistence port for confirmed visit events."""
+
+    def save_many(self, events: Sequence[VisitEvent]) -> None:
+        """Persist a batch of events atomically."""
+
+    def count(self) -> int:
+        """Return the number of persisted events."""
+
+    def close(self) -> None:
+        """Release the persistence resource."""
+
+
 class FramePresenter(Protocol):
     """Renders a frame and reports whether the application should stop."""
 

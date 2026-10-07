@@ -22,6 +22,7 @@ class Settings:
     tracker: str = "bytetrack.yaml"
     show_preview: bool = True
     window_title: str = "Expo Visitor Counter - YOLO Prototype"
+    database_path: Path = PROJECT_ROOT / "data" / "session.sqlite3"
     # Provisional frame coordinates; calibrate these values for the physical Expo setup.
     counting_line_start_x: float = 0.0
     counting_line_start_y: float = 300.0

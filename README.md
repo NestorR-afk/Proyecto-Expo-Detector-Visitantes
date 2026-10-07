@@ -12,7 +12,7 @@ La primera arquitectura ejecutable mantiene el prototipo YOLO existente dentro d
  cámara → tracking YOLO/ByteTrack → TrackedPerson[] → VisitEvent[] → presentación
 ```
 
-El flujo de aplicación ya integra la generación de `VisitEvent` y mantiene un total acumulado en memoria durante la ejecución. Ese total se pierde al cerrar el proceso; SQLite será una etapa posterior.
+El flujo de aplicación integra la generación de `VisitEvent` y persiste esos eventos en SQLite. El total visible se recupera desde la cantidad de eventos almacenados al reiniciar.
 
 La geometría pura de `CrossingLine` evalúa si un movimiento entre dos centroides cruza un segmento finito. La línea provisional se configura en `Settings` y debe calibrarse para la instalación física.
 
@@ -75,6 +75,7 @@ La configuración operativa se encuentra en `src/config/settings.py`, dentro de 
 | `show_preview` | `True` | Muestra u oculta la ventana OpenCV |
 | `counting_line_start_x/y` | `0.0 / 300.0` | Inicio provisional del segmento de conteo |
 | `counting_line_end_x/y` | `1280.0 / 300.0` | Fin provisional del segmento de conteo |
+| `database_path` | `data/session.sqlite3` | Base SQLite local de eventos |
 
 No se usan rutas absolutas del equipo ni archivos YAML, dotenv o paquetes de configuración externos.
 
@@ -98,7 +99,9 @@ El dominio no depende de OpenCV, Ultralytics, NumPy ni del filesystem. La cámar
 
 ## Conceptos y privacidad
 
-Un `TrackingID` no representa la identidad real de una persona y no debe interpretarse como un visitante. El adapter entrega `TrackedPerson` con `tracking_id`, `bounding_box`, `centroid` y `confidence`. `VisitEvent` representa un evento de paso generado por la línea, no una identidad persistente. El total actual es sólo de sesión y todavía no se guarda en SQLite.
+Un `TrackingID` no representa la identidad real de una persona y no debe interpretarse como un visitante. El adapter entrega `TrackedPerson` con `tracking_id`, `bounding_box`, `centroid` y `confidence`. `VisitEvent` representa un evento de paso generado por la línea, no una identidad persistente.
+
+SQLite guarda únicamente `tracking_id`, dirección geométrica y timestamp UTC ISO 8601 en `data/session.sqlite3`. No se almacenan imágenes, frames, video ni datos de identidad personal.
 
 El sistema no realiza reconocimiento facial. No almacena por defecto caras, fotografías, frames ni video. Los datos futuros deberán limitarse a estadísticas anónimas y eventos técnicos mínimos.
 
@@ -116,8 +119,7 @@ python -m unittest discover -s tests
 
 ## Próximas etapas
 
-1. Agregar persistencia SQLite.
-2. Calibrar y validar la línea en la cámara real.
-3. Agregar recuperación de cámara, métricas y pruebas prolongadas.
+1. Calibrar y validar la línea en la cámara real.
+2. Agregar recuperación de cámara, métricas y pruebas prolongadas.
 
 Cada etapa debe mantener el dominio independiente de la infraestructura.

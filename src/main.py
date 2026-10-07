@@ -5,6 +5,9 @@ from src.config.settings import Settings
 from src.domain.counting import CrossingLine, TrajectoryEventDetector
 from src.domain.models import Point
 from src.infrastructure.camera.opencv_camera import OpenCVCamera
+from src.infrastructure.persistence.sqlite_visit_event_repository import (
+    SQLiteVisitEventRepository,
+)
 from src.infrastructure.tracking.ultralytics_tracker import UltralyticsTracker
 from src.presentation.noop import NoOpPresenter
 from src.presentation.opencv.window import OpenCVWindow
@@ -39,7 +42,21 @@ def build_application(settings: Settings) -> TrackingLoop:
     )
     crossing_line = build_crossing_line(settings)
     event_detector = TrajectoryEventDetector(crossing_line)
-    return TrackingLoop(camera, tracker, event_detector, crossing_line, presenter)
+    repository = SQLiteVisitEventRepository(settings.database_path)
+    try:
+        initial_total = repository.count()
+    except Exception:
+        repository.close()
+        raise
+    return TrackingLoop(
+        camera,
+        tracker,
+        event_detector,
+        crossing_line,
+        presenter,
+        repository,
+        initial_total,
+    )
 
 
 def main() -> None:

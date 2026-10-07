@@ -54,13 +54,31 @@ class RecordingPresenter:
         self.closed = True
 
 
+class FakeRepository:
+    def __init__(self, initial_total: int = 0) -> None:
+        self.initial_total = initial_total
+        self.saved: list[tuple] = []
+        self.closed = False
+
+    def save_many(self, events: tuple) -> None:
+        self.saved.extend(events)
+
+    def count(self) -> int:
+        return self.initial_total
+
+    def close(self) -> None:
+        self.closed = True
+
+
 def run_loop(
     tracks_by_frame: list[list[TrackedPerson]],
     clock_values: list[float] | None = None,
-) -> tuple[TrackingLoop, RecordingPresenter, FakeFrameSource]:
+    repository: FakeRepository | None = None,
+) -> tuple[TrackingLoop, RecordingPresenter, FakeFrameSource, FakeRepository]:
     source = FakeFrameSource(len(tracks_by_frame))
     tracker = FakeTracker(tracks_by_frame)
     presenter = RecordingPresenter()
+    repository = repository or FakeRepository()
     detector = TrajectoryEventDetector(LINE)
     values = iter(clock_values or range(len(tracks_by_frame)))
     loop = TrackingLoop(
@@ -69,34 +87,39 @@ def run_loop(
         detector,
         LINE,
         presenter,
+        repository,
+        repository.count(),
         clock=lambda: next(values),
     )
     loop.run()
-    return loop, presenter, source
+    return loop, presenter, source, repository
 
 
 class TrackingLoopTests(unittest.TestCase):
     def test_empty_frame_keeps_total_at_zero(self) -> None:
-        loop, presenter, _ = run_loop([[]])
+        loop, presenter, _, _ = run_loop([[]])
 
         self.assertEqual(loop.total_visits, 0)
         self.assertEqual(presenter.states[0].events, ())
 
     def test_first_frame_does_not_generate_a_visit(self) -> None:
-        loop, presenter, _ = run_loop([[person(1, 250)]])
+        loop, presenter, _, _ = run_loop([[person(1, 250)]])
 
         self.assertEqual(loop.total_visits, 0)
         self.assertEqual(presenter.states[0].total_visits, 0)
 
     def test_crossing_increments_total(self) -> None:
-        loop, presenter, _ = run_loop([[person(1, 250)], [person(1, 350)]])
+        loop, presenter, _, repository = run_loop(
+            [[person(1, 250)], [person(1, 350)]]
+        )
 
         self.assertEqual(loop.total_visits, 1)
         self.assertEqual(len(presenter.states[1].events), 1)
         self.assertEqual(presenter.states[1].total_visits, 1)
+        self.assertEqual(len(repository.saved), 1)
 
     def test_same_track_oscillation_is_counted_once(self) -> None:
-        loop, presenter, _ = run_loop(
+        loop, presenter, _, _ = run_loop(
             [[person(1, 250)], [person(1, 350)], [person(1, 250)], [person(1, 350)]]
         )
 
@@ -104,7 +127,7 @@ class TrackingLoopTests(unittest.TestCase):
         self.assertEqual(sum(len(state.events) for state in presenter.states), 1)
 
     def test_two_tracks_crossing_in_same_frame_produce_two_events(self) -> None:
-        loop, presenter, _ = run_loop(
+        loop, presenter, _, repository = run_loop(
             [
                 [person(1, 250), person(2, 240)],
                 [person(1, 350), person(2, 340)],
@@ -113,18 +136,28 @@ class TrackingLoopTests(unittest.TestCase):
 
         self.assertEqual(loop.total_visits, 2)
         self.assertEqual(len(presenter.states[1].events), 2)
+        self.assertEqual(len(repository.saved), 2)
 
     def test_clock_is_called_without_sleeping(self) -> None:
-        loop, _, _ = run_loop([[person(1, 250)], [person(1, 350)]], [10.0, 11.0])
+        loop, _, _, _ = run_loop(
+            [[person(1, 250)], [person(1, 350)]], [10.0, 11.0]
+        )
 
         self.assertEqual(loop.total_visits, 1)
 
     def test_presenter_and_source_are_closed(self) -> None:
-        loop, presenter, source = run_loop([[]])
+        loop, presenter, source, repository = run_loop([[]])
 
         self.assertEqual(loop.total_visits, 0)
         self.assertTrue(source.released)
         self.assertTrue(presenter.closed)
+        self.assertTrue(repository.closed)
+
+    def test_total_starts_from_persisted_count(self) -> None:
+        loop, presenter, _, _ = run_loop([[]], repository=FakeRepository(347))
+
+        self.assertEqual(loop.total_visits, 347)
+        self.assertEqual(presenter.states[0].total_visits, 347)
 
     def test_noop_presenter_keeps_preview_disabled_path_working(self) -> None:
         state = PresentationState((), (), 0, LINE)

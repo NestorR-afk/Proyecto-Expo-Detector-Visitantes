@@ -8,6 +8,7 @@ from src.application.ports import (
     FrameSource,
     PersonTracker,
     PresentationState,
+    VisitEventRepository,
 )
 from src.domain.counting import CrossingLine, TrajectoryEventDetector
 
@@ -22,6 +23,8 @@ class TrackingLoop:
         event_detector: TrajectoryEventDetector,
         crossing_line: CrossingLine,
         presenter: FramePresenter,
+        event_repository: VisitEventRepository,
+        initial_total: int,
         clock: Callable[[], float] = monotonic,
     ) -> None:
         self._frame_source = frame_source
@@ -29,8 +32,9 @@ class TrackingLoop:
         self._event_detector = event_detector
         self._crossing_line = crossing_line
         self._presenter = presenter
+        self._event_repository = event_repository
         self._clock = clock
-        self._total_visits = 0
+        self._total_visits = initial_total
 
     @property
     def total_visits(self) -> int:
@@ -47,7 +51,9 @@ class TrackingLoop:
 
                 people = tuple(self._tracker.track(frame))
                 events = self._event_detector.update(people, now=self._clock())
-                self._total_visits += len(events)
+                if events:
+                    self._event_repository.save_many(events)
+                    self._total_visits += len(events)
                 state = PresentationState(
                     people=people,
                     events=events,
@@ -59,3 +65,4 @@ class TrackingLoop:
         finally:
             self._frame_source.release()
             self._presenter.close()
+            self._event_repository.close()

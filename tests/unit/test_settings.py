@@ -16,6 +16,10 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(settings.tracker, "bytetrack.yaml")
         self.assertTrue(settings.show_preview)
         self.assertEqual(
+            settings.database_path,
+            PROJECT_ROOT / "data" / "session.sqlite3",
+        )
+        self.assertEqual(
             (
                 settings.counting_line_start_x,
                 settings.counting_line_start_y,
