@@ -52,7 +52,7 @@ El modelo `models/yolo11n.pt` se conserva dentro del repositorio para permitir e
 python -m src.main
 ```
 
-La ventana muestra las personas detectadas y sus `TrackingID` temporales. Presionar `Q` para finalizar.
+La ventana muestra las personas trackeadas, su `TrackingID` temporal y el bounding box. El pipeline utiliza explícitamente `bytetrack.yaml`, `persist=True` y solamente la clase persona. Presionar `Q` para finalizar.
 
 ## Configuración
 
@@ -91,7 +91,7 @@ El dominio no depende de OpenCV, Ultralytics, NumPy ni del filesystem. La cámar
 
 ## Conceptos y privacidad
 
-Un `TrackingID` no representa la identidad real de una persona y no debe interpretarse como un visitante. El evento de negocio futuro será `VisitEvent`, generado por reglas de cruce de zona o línea.
+Un `TrackingID` no representa la identidad real de una persona y no debe interpretarse como un visitante. El adapter entrega `TrackedPerson` con `tracking_id`, `bounding_box`, `centroid` y `confidence`. El evento de negocio futuro será `VisitEvent`, generado por reglas de cruce de zona o línea.
 
 El sistema no realiza reconocimiento facial. No almacena por defecto caras, fotografías, frames ni video. Los datos futuros deberán limitarse a estadísticas anónimas y eventos técnicos mínimos.
 

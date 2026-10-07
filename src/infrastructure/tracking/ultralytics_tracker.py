@@ -50,6 +50,9 @@ class UltralyticsTracker:
                 result.boxes.conf,
                 result.boxes.id,
             ):
+                if tracking_id is None:
+                    continue
+
                 x1, y1, x2, y2 = (float(value) for value in box.tolist())
                 people.append(
                     TrackedPerson(

@@ -29,11 +29,24 @@ class BoundingBox:
             raise ValueError("BoundingBox coordinates must be ordered")
 
     @property
-    def center(self) -> Point:
+    def width(self) -> float:
+        return self.x2 - self.x1
+
+    @property
+    def height(self) -> float:
+        return self.y2 - self.y1
+
+    @property
+    def centroid(self) -> Point:
         return Point(
             x=(self.x1 + self.x2) / 2,
             y=(self.y1 + self.y2) / 2,
         )
+
+    @property
+    def center(self) -> Point:
+        """Backward-compatible alias for ``centroid``."""
+        return self.centroid
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,3 +56,7 @@ class TrackedPerson:
     tracking_id: TrackingID
     bounding_box: BoundingBox
     confidence: float
+
+    @property
+    def centroid(self) -> Point:
+        return self.bounding_box.centroid

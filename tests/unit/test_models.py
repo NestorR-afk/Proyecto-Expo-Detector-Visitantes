@@ -8,6 +8,9 @@ class BoundingBoxTests(unittest.TestCase):
         box = BoundingBox(10, 20, 30, 60)
 
         self.assertEqual(box.center, Point(20, 40))
+        self.assertEqual(box.centroid, Point(20, 40))
+        self.assertEqual(box.width, 20)
+        self.assertEqual(box.height, 40)
 
     def test_rejects_reversed_coordinates(self) -> None:
         with self.assertRaises(ValueError):
@@ -24,6 +27,7 @@ class TrackedPersonTests(unittest.TestCase):
 
         self.assertEqual(person.tracking_id, 7)
         self.assertEqual(person.bounding_box.center, Point(10, 20))
+        self.assertEqual(person.centroid, Point(10, 20))
         self.assertEqual(person.confidence, 0.95)
 
 
