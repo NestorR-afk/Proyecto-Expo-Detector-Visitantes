@@ -16,6 +16,8 @@ Todavía no se implementaron el contador de visitantes, la integración del cruc
 
 La geometría pura de `CrossingLine` permite evaluar si un movimiento entre dos centroides cruza un segmento finito. Esta capacidad todavía no está integrada al loop ni genera visitantes acumulados.
 
+`TrajectoryEventDetector` mantiene estado técnico mínimo por `TrackingID` y emite como máximo un `VisitEvent` mientras ese track permanece activo. Si el estado expira, una trayectoria posterior puede iniciar un nuevo ciclo. Todavía no existe persistencia ni contador acumulativo.
+
 ## Requisitos
 
 - Windows, Linux o macOS con Python 3.11 recomendado.
