@@ -1,2 +1,4 @@
+# Runtime packages used by the current PC prototype.
+# Versions remain unpinned until a validated target environment is available.
 opencv-python
 ultralytics

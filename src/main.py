@@ -4,6 +4,7 @@ from src.application.tracking_loop import TrackingLoop
 from src.config.settings import Settings
 from src.infrastructure.camera.opencv_camera import OpenCVCamera
 from src.infrastructure.tracking.ultralytics_tracker import UltralyticsTracker
+from src.presentation.noop import NoOpPresenter
 from src.presentation.opencv.window import OpenCVWindow
 
 
@@ -11,13 +12,23 @@ def build_application(settings: Settings) -> TrackingLoop:
     """Build the concrete adapters used by the current prototype."""
     tracker = UltralyticsTracker(
         model_path=settings.model_path,
-        image_size=settings.image_size,
+        imgsz=settings.imgsz,
+        confidence=settings.confidence,
+        iou=settings.iou,
         person_class_id=settings.person_class_id,
-        tracker_config=settings.tracker_config,
+        tracker=settings.tracker,
     )
-    camera = OpenCVCamera(settings.camera_index)
-    window = OpenCVWindow(settings.window_title)
-    return TrackingLoop(camera, tracker, window)
+    camera = OpenCVCamera(
+        camera_index=settings.camera_index,
+        width=settings.camera_width,
+        height=settings.camera_height,
+    )
+    presenter = (
+        OpenCVWindow(settings.window_title)
+        if settings.show_preview
+        else NoOpPresenter()
+    )
+    return TrackingLoop(camera, tracker, presenter)
 
 
 def main() -> None:

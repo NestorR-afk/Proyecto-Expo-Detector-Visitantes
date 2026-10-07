@@ -15,22 +15,28 @@ class UltralyticsTracker:
     def __init__(
         self,
         model_path: Path,
-        image_size: int,
+        imgsz: int,
+        confidence: float,
+        iou: float,
         person_class_id: int,
-        tracker_config: str,
+        tracker: str,
     ) -> None:
         self._model = YOLO(str(model_path))
-        self._image_size = image_size
+        self._imgsz = imgsz
+        self._confidence = confidence
+        self._iou = iou
         self._person_class_id = person_class_id
-        self._tracker_config = tracker_config
+        self._tracker = tracker
 
     def track(self, frame: Any) -> Sequence[TrackedPerson]:
         results = self._model.track(
             frame,
-            imgsz=self._image_size,
+            imgsz=self._imgsz,
+            conf=self._confidence,
+            iou=self._iou,
             classes=[self._person_class_id],
             persist=True,
-            tracker=self._tracker_config,
+            tracker=self._tracker,
             verbose=False,
         )
 

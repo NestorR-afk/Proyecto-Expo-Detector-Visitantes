@@ -16,10 +16,18 @@ Todavía no se implementaron el contador de visitantes, la línea de cruce, ROI,
 
 ## Requisitos
 
-- PC o notebook con Python 3.10 o superior.
+- Windows, Linux o macOS con Python 3.11 recomendado.
+- Python 3.10 puede funcionar, pero no es la versión de validación de este repositorio.
 - Webcam accesible como dispositivo `0`.
+- CPU moderna y al menos 8 GB de RAM para el prototipo YOLO.
 - Alimentación y ventilación adecuadas para pruebas prolongadas.
 - Dependencias listadas en `requirements.txt`.
+
+La recomendación de Python 3.11 es conservadora para combinar Ultralytics y PyTorch en CPU o con una GPU NVIDIA futura. La documentación de Ultralytics utiliza Python 3.11 en su guía de entorno Conda y advierte que la instalación de PyTorch depende del sistema operativo y CUDA. La compatibilidad concreta de PyTorch depende del hardware y debe validarse en la PC destino.
+
+## Dependencias
+
+`requirements.txt` declara solamente `opencv-python` y `ultralytics`. PyTorch no se fija por separado porque su wheel depende del sistema operativo y de la variante CPU/CUDA; Ultralytics declara las dependencias necesarias para su instalación. Para una GPU NVIDIA, conviene seleccionar primero la instalación oficial de PyTorch correspondiente al driver/CUDA y luego instalar el resto del archivo.
 
 ## Instalación básica
 
@@ -45,6 +53,24 @@ python -m src.main
 ```
 
 La ventana muestra las personas detectadas y sus `TrackingID` temporales. Presionar `Q` para finalizar.
+
+## Configuración
+
+La configuración operativa se encuentra en `src/config/settings.py`, dentro de `Settings`:
+
+| Campo | Default | Uso |
+|---|---:|---|
+| `camera_index` | `0` | Índice de la webcam |
+| `camera_width` | `None` | Ancho opcional solicitado a OpenCV |
+| `camera_height` | `None` | Alto opcional solicitado a OpenCV |
+| `model_path` | `models/yolo11n.pt` | Modelo local |
+| `imgsz` | `320` | Tamaño de inferencia |
+| `confidence` | `0.25` | Confianza mínima de detección |
+| `iou` | `0.7` | Umbral IoU de NMS |
+| `tracker` | `bytetrack.yaml` | Tracker integrado de Ultralytics |
+| `show_preview` | `True` | Muestra u oculta la ventana OpenCV |
+
+No se usan rutas absolutas del equipo ni archivos YAML, dotenv o paquetes de configuración externos.
 
 ## Arquitectura
 
