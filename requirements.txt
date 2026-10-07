@@ -1,4 +1,5 @@
-# Runtime packages used by the current PC prototype.
-# Versions remain unpinned until a validated target environment is available.
-opencv-python
-ultralytics
+# Direct runtime packages validated in the local PC environment.
+opencv-python==5.0.0.93
+ultralytics==8.4.174
+# Required by Ultralytics ByteTrack; it is not installed reliably transitively.
+lap==0.5.13

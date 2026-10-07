@@ -33,7 +33,7 @@ La recomendación de Python 3.11 es conservadora para combinar Ultralytics y PyT
 
 ## Dependencias
 
-`requirements.txt` declara solamente `opencv-python` y `ultralytics`. PyTorch no se fija por separado porque su wheel depende del sistema operativo y de la variante CPU/CUDA; Ultralytics declara las dependencias necesarias para su instalación. Para una GPU NVIDIA, conviene seleccionar primero la instalación oficial de PyTorch correspondiente al driver/CUDA y luego instalar el resto del archivo.
+`requirements.txt` fija `opencv-python==5.0.0.93`, `ultralytics==8.4.174` y `lap==0.5.13`. `lap` es necesario para que ByteTrack funcione con la versión validada de Ultralytics. PyTorch se instala según la plataforma y la variante CPU/CUDA; en la validación local se utilizó `torch==2.14.1+cpu` y `torchvision==0.29.1+cpu` desde el índice oficial CPU de PyTorch. Para una GPU NVIDIA, seleccionar primero la instalación oficial de PyTorch correspondiente al driver/CUDA y luego instalar el resto del archivo.
 
 ## Instalación básica
 
