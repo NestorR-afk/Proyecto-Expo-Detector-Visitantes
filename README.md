@@ -9,14 +9,14 @@ Aplicación de visión artificial para estudiar el flujo de personas frente a un
 La primera arquitectura ejecutable mantiene el prototipo YOLO existente dentro de una estructura por capas:
 
 ```text
-cámara → tracking YOLO → presentación OpenCV
+ cámara → tracking YOLO/ByteTrack → TrackedPerson[] → VisitEvent[] → presentación
 ```
 
-Todavía no se implementaron el contador de visitantes, la integración del cruce al tracking, ROI, SQLite, recuperación automática ni métricas avanzadas.
+El flujo de aplicación ya integra la generación de `VisitEvent` y mantiene un total acumulado en memoria durante la ejecución. Ese total se pierde al cerrar el proceso; SQLite será una etapa posterior.
 
-La geometría pura de `CrossingLine` permite evaluar si un movimiento entre dos centroides cruza un segmento finito. Esta capacidad todavía no está integrada al loop ni genera visitantes acumulados.
+La geometría pura de `CrossingLine` evalúa si un movimiento entre dos centroides cruza un segmento finito. La línea provisional se configura en `Settings` y debe calibrarse para la instalación física.
 
-`TrajectoryEventDetector` mantiene estado técnico mínimo por `TrackingID` y emite como máximo un `VisitEvent` mientras ese track permanece activo. Si el estado expira, una trayectoria posterior puede iniciar un nuevo ciclo. Todavía no existe persistencia ni contador acumulativo.
+`TrajectoryEventDetector` mantiene estado técnico mínimo por `TrackingID` y emite como máximo un `VisitEvent` mientras ese track permanece activo. Si el estado expira, una trayectoria posterior puede iniciar un nuevo ciclo. `TrackingID != VisitEvent`: el primero es temporal y el segundo representa un evento de paso.
 
 ## Requisitos
 
@@ -56,7 +56,7 @@ El modelo `models/yolo11n.pt` se conserva dentro del repositorio para permitir e
 python -m src.main
 ```
 
-La ventana muestra las personas trackeadas, su `TrackingID` temporal y el bounding box. El pipeline utiliza explícitamente `bytetrack.yaml`, `persist=True` y solamente la clase persona. Presionar `Q` para finalizar.
+La ventana muestra las personas trackeadas, su `TrackingID` temporal, bounding boxes, la línea provisional y el total de eventos de la sesión. El pipeline utiliza explícitamente `bytetrack.yaml`, `persist=True` y solamente la clase persona. Presionar `Q` para finalizar.
 
 ## Configuración
 
@@ -73,6 +73,8 @@ La configuración operativa se encuentra en `src/config/settings.py`, dentro de 
 | `iou` | `0.7` | Umbral IoU de NMS |
 | `tracker` | `bytetrack.yaml` | Tracker integrado de Ultralytics |
 | `show_preview` | `True` | Muestra u oculta la ventana OpenCV |
+| `counting_line_start_x/y` | `0.0 / 300.0` | Inicio provisional del segmento de conteo |
+| `counting_line_end_x/y` | `1280.0 / 300.0` | Fin provisional del segmento de conteo |
 
 No se usan rutas absolutas del equipo ni archivos YAML, dotenv o paquetes de configuración externos.
 
@@ -96,7 +98,7 @@ El dominio no depende de OpenCV, Ultralytics, NumPy ni del filesystem. La cámar
 
 ## Conceptos y privacidad
 
-Un `TrackingID` no representa la identidad real de una persona y no debe interpretarse como un visitante. El adapter entrega `TrackedPerson` con `tracking_id`, `bounding_box`, `centroid` y `confidence`. El evento de negocio futuro será `VisitEvent`, generado por reglas de cruce de zona o línea.
+Un `TrackingID` no representa la identidad real de una persona y no debe interpretarse como un visitante. El adapter entrega `TrackedPerson` con `tracking_id`, `bounding_box`, `centroid` y `confidence`. `VisitEvent` representa un evento de paso generado por la línea, no una identidad persistente. El total actual es sólo de sesión y todavía no se guarda en SQLite.
 
 El sistema no realiza reconocimiento facial. No almacena por defecto caras, fotografías, frames ni video. Los datos futuros deberán limitarse a estadísticas anónimas y eventos técnicos mínimos.
 
@@ -114,9 +116,8 @@ python -m unittest discover -s tests
 
 ## Próximas etapas
 
-1. Separar detección y tracking cuando exista una necesidad real.
-2. Incorporar la máquina de estados de conteo basada en `VisitEvent`.
-3. Agregar persistencia SQLite.
-4. Agregar recuperación de cámara, métricas y pruebas prolongadas.
+1. Agregar persistencia SQLite.
+2. Calibrar y validar la línea en la cámara real.
+3. Agregar recuperación de cámara, métricas y pruebas prolongadas.
 
 Cada etapa debe mantener el dominio independiente de la infraestructura.

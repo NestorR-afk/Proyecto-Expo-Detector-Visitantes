@@ -15,6 +15,15 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(settings.iou, 0.7)
         self.assertEqual(settings.tracker, "bytetrack.yaml")
         self.assertTrue(settings.show_preview)
+        self.assertEqual(
+            (
+                settings.counting_line_start_x,
+                settings.counting_line_start_y,
+                settings.counting_line_end_x,
+                settings.counting_line_end_y,
+            ),
+            (0.0, 300.0, 1280.0, 300.0),
+        )
 
 
 if __name__ == "__main__":

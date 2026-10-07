@@ -2,10 +2,19 @@
 
 from src.application.tracking_loop import TrackingLoop
 from src.config.settings import Settings
+from src.domain.counting import CrossingLine, TrajectoryEventDetector
+from src.domain.models import Point
 from src.infrastructure.camera.opencv_camera import OpenCVCamera
 from src.infrastructure.tracking.ultralytics_tracker import UltralyticsTracker
 from src.presentation.noop import NoOpPresenter
 from src.presentation.opencv.window import OpenCVWindow
+
+
+def build_crossing_line(settings: Settings) -> CrossingLine:
+    return CrossingLine(
+        start=Point(settings.counting_line_start_x, settings.counting_line_start_y),
+        end=Point(settings.counting_line_end_x, settings.counting_line_end_y),
+    )
 
 
 def build_application(settings: Settings) -> TrackingLoop:
@@ -28,7 +37,9 @@ def build_application(settings: Settings) -> TrackingLoop:
         if settings.show_preview
         else NoOpPresenter()
     )
-    return TrackingLoop(camera, tracker, presenter)
+    crossing_line = build_crossing_line(settings)
+    event_detector = TrajectoryEventDetector(crossing_line)
+    return TrackingLoop(camera, tracker, event_detector, crossing_line, presenter)
 
 
 def main() -> None:
